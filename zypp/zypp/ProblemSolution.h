@@ -9,119 +9,122 @@
 #ifndef ZYPP_PROBLEMSOLUTION_H
 #define ZYPP_PROBLEMSOLUTION_H
 
-#include <set>
 #include <list>
-#include <string>
 #include <optional>
+#include <set>
+#include <string>
 
 #include <zypp/PoolItem.h>
 #include <zypp/ProblemTypes.h>
 #include <zypp/ResolverProblem.h>
 
 /////////////////////////////////////////////////////////////////////////
-namespace zypp
-{
-  /////////////////////////////////////////////////////////////////////////
-  /// \class ProblemSolution
-  /// \brief Class representing one possible solution to a problem found during resolving
-  ///
-  /// All problems should have at least 2-3 (mutually exclusive) solutions:
-  ///
-  ///    - Undo: Do not perform the offending transaction
-  ///	 (do not install the package that had unsatisfied requirements,
-  ///	  do not remove	 the package that would break other packages' requirements)
-  ///
-  ///    - Remove referrers: Remove all packages that would break because
-  ///	they depend on the package that is requested to be removed
-  ///
-  ///    - Ignore: Inject artificial "provides" for a missing requirement
-  ///	(pretend that requirement is satisfied)
-  /////////////////////////////////////////////////////////////////////////
-  class ZYPP_API ProblemSolution : public base::ReferenceCounted
-  {
-  public:
-    using SolutionAction_Ptr = solver::detail::SolutionAction_Ptr;
-    using SolutionActionList = solver::detail::SolutionActionList;
+namespace zypp {
+/////////////////////////////////////////////////////////////////////////
+/// \class ProblemSolution
+/// \brief Class representing one possible solution to a problem found during
+/// resolving
+///
+/// All problems should have at least 2-3 (mutually exclusive) solutions:
+///
+///    - Undo: Do not perform the offending transaction
+///	 (do not install the package that had unsatisfied requirements,
+///	  do not remove	 the package that would break other packages'
+///requirements)
+///
+///    - Remove referrers: Remove all packages that would break because
+///	they depend on the package that is requested to be removed
+///
+///    - Ignore: Inject artificial "provides" for a missing requirement
+///	(pretend that requirement is satisfied)
+/////////////////////////////////////////////////////////////////////////
+class ZYPP_API ProblemSolution : public base::ReferenceCounted {
+public:
+  using SolutionAction_Ptr = solver::detail::SolutionAction_Ptr;
+  using SolutionActionList = solver::detail::SolutionActionList;
 
-    /** Constructor. */
-    ProblemSolution();
+  /** Constructor. */
+  ProblemSolution();
 
-    /** Constructor. */
-    ProblemSolution( std::string description );
+  /** Constructor. */
+  ProblemSolution(std::string description);
 
-    /** Constructor. */
-    ProblemSolution( std::string description, std::string details );
+  /** Constructor. */
+  ProblemSolution(std::string description, std::string details);
 
-    /** Destructor. */
-    ~ProblemSolution() override;
+  /** Destructor. */
+  ~ProblemSolution() override;
 
+  /**
+   * Return a one-line text description of this solution.
+   **/
+  const std::string &description() const;
 
-    /**
-     * Return a one-line text description of this solution.
-     **/
-    const std::string & description() const;
+  /**
+   * Return a (possibly multi-line) detailed description of this
+   * solution or an empty string if there are no useful details.
+   **/
+  const std::string &details() const;
 
-    /**
-     * Return a (possibly multi-line) detailed description of this
-     * solution or an empty string if there are no useful details.
-     **/
-    const std::string & details() const;
+  /**
+   * Return the list of actions forming this solution.
+   **/
+  const SolutionActionList &actions() const;
 
-    /**
-     * Return the list of actions forming this solution.
-     **/
-    const SolutionActionList & actions() const;
+  /**
+   * Set description of the solution.
+   **/
+  void setDescription(std::string description);
 
-    /**
-     * Set description of the solution.
-     **/
-    void setDescription( std::string description );
+  /**
+   * Set detail description of the solution.
+   **/
+  void setDetails(const std::string &details);
 
-    /**
-     * Set detail description of the solution.
-     **/
-    void setDetails( const std::string& details );
+  /**
+   * Collect multiple action descriptions in \ref details (NL separated)
+   **/
+  void pushDescriptionDetail(std::string description, bool front = false);
 
-    /**
-     * Collect multiple action descriptions in \ref details (NL separated)
-     **/
-    void pushDescriptionDetail( std::string description, bool front = false );
+  /**
+   * Add an action to the actions list.
+   **/
+  void addAction(const SolutionAction_Ptr &action);
 
-
-    /**
-     * Add an action to the actions list.
-     **/
-    void addAction( const SolutionAction_Ptr& action );
-
-  public:
-    /** The solution contains only 'do not install patch:' actions. */
-    bool skipsPatchesOnly() const;
+public:
+  /** The solution contains only 'do not install patch:' actions. */
+  bool skipsPatchesOnly() const;
 
 #ifdef __cpp_lib_optional // YAST/PK explicitly use c++11 until 15-SP3
-    /** The patches if \ref skipsPatchesOnly is true. */
-    std::optional<std::set<PoolItem>> getIfSkipsPatchesOnly() const;
+  /** The patches if \ref skipsPatchesOnly is true. */
+  std::optional<std::set<PoolItem>> getIfSkipsPatchesOnly() const;
 #endif
 
-    /** The solution contains only 'keep installed (lock in place)' actions. */
-    bool locksInstalledOnly() const;
+  /** The solution contains only 'lock installed item in place' actions.
+   *
+   * Applying such a solution keeps the items in place for the current
+   * session only; the lock is not persisted. A caller may use this to
+   * auto-apply these non-invasive solutions rather than asking the user.
+   */
+  bool locksInstalledOnly() const;
 
 #ifdef __cpp_lib_optional // YAST/PK explicitly use c++11 until 15-SP3
-    /** The items if \ref locksInstalledOnly is true. */
-    std::optional<std::set<PoolItem>> getIfLocksInstalledOnly() const;
+  /** The items if \ref locksInstalledOnly is true. */
+  std::optional<std::set<PoolItem>> getIfLocksInstalledOnly() const;
 #endif
 
-  private:
-    struct Impl;
-    RWCOW_pointer<Impl> _pimpl;
-  };
+private:
+  struct Impl;
+  RWCOW_pointer<Impl> _pimpl;
+};
 
-  /** relates: ProblemSolution Stream output */
-  std::ostream& operator<<(std::ostream&, const ProblemSolution & obj ) ZYPP_API;
+/** relates: ProblemSolution Stream output */
+std::ostream &operator<<(std::ostream &, const ProblemSolution &obj) ZYPP_API;
 
-  /** relates: ProblemSolution Stream output */
-  std::ostream& operator<<(std::ostream&, const ProblemSolutionList & obj ) ZYPP_API;
+/** relates: ProblemSolution Stream output */
+std::ostream &operator<<(std::ostream &,
+                         const ProblemSolutionList &obj) ZYPP_API;
 
 } // namespace zypp
 /////////////////////////////////////////////////////////////////////////
 #endif // ZYPP_PROBLEMSOLUTION_H
-
