@@ -142,7 +142,7 @@ namespace zypp::solver::detail {
   { return _action == KEEP && _item.isKind<Patch>(); }
 
   bool TransactionSolutionAction::locksInstalledOnly() const
-  { return _action == LOCK; }
+  { return _action == LOCK && _item.isSystem(); }
 
   ///////////////////////////////////////////////////////////////////////
   // class InjectSolutionAction

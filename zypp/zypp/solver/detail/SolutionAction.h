@@ -64,7 +64,7 @@ namespace zypp
         /** The solution contains only 'do not install patch:' actions. */
         virtual bool skipsPatchesOnly() const;
 
-        /** The solution contains only 'keep installed (lock in place)' actions. */
+        /** The solution contains only 'lock installed item in place' actions. */
         virtual bool locksInstalledOnly() const;
       };
 
