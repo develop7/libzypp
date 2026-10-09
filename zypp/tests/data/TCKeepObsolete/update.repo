@@ -1,0 +1,14 @@
+=Ver: 3.0
+=Pkg: glibc 2 1 x86_64
++Prv:
+glibc = 2-1
+-Prv:
+=Vnd: openSUSE
+=Pkg: bar 2 1 x86_64
++Req:
+glibc = 1-1
+-Req:
++Prv:
+bar = 2-1
+-Prv:
+=Vnd: openSUSE

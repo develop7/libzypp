@@ -1,5 +1,6 @@
 #include <tests/lib/TestSetup.h>
 #include <zypp/ResPool.h>
+#include <zypp/ProblemSolution.h>
 #include <zypp/ResPoolProxy.h>
 #include <zypp/pool/PoolStats.h>
 #include <zypp/ui/Selectable.h>
@@ -65,3 +66,60 @@ BOOST_AUTO_TEST_CASE( orphaned )
   BOOST_CHECK_EQUAL( proxy.lookup( ResKind::package, "dropped" )->status(),		ui::S_AutoDel );
 }
 
+
+BOOST_AUTO_TEST_CASE( keepObsoleteSolution )
+{
+  // dist-upgrade problem whose 'keep obsolete' solution must be
+  // classified by locksInstalledOnly/getIfLocksInstalledOnly:
+  //   - the update repo offers glibc 2 and bar 2 (requiring glibc = 1)
+  //   - so replacing the installed glibc 1 can never satisfy bar 2
+  //   - the solver reports the problem and offers 'keep obsolete glibc'
+  //     (LOCK action) next to deinstalling bar (KEEP) and ignoring
+  //     dependencies (inject).
+  TestSetup ktest( Arch_x86_64 );
+  ktest.loadTestcaseRepos( TESTS_SRC_DIR"/data/TCKeepObsolete" );
+
+  ResPool kpool( ktest.pool() );
+  PoolItem iglibc;
+  for ( const auto & pi : kpool.byName( "glibc" ) )
+  { if ( pi.isSystem() ) iglibc = pi; }
+  BOOST_REQUIRE( iglibc );
+
+  Resolver & resolver( ktest.resolver() );
+  BOOST_REQUIRE( ! resolver.doUpgrade() );
+  ResolverProblemList rproblems( resolver.problems() );
+  BOOST_REQUIRE( ! rproblems.empty() );
+
+  ProblemSolution_Ptr keepObs;
+  unsigned keepObsCount = 0;
+  for ( const auto & prob : rproblems )
+  {
+    USR << prob << endl;
+    for ( const auto & sol : prob->solutions() )
+    {
+      if ( sol->locksInstalledOnly() )
+      { keepObs = sol; ++keepObsCount; }
+      else
+      { BOOST_CHECK( ! sol->getIfLocksInstalledOnly() ); }
+    }
+  }
+  BOOST_REQUIRE( keepObs );
+  BOOST_CHECK_EQUAL( keepObsCount, 1U );
+  BOOST_CHECK_EQUAL( keepObs->description(), "keep obsolete glibc-1-1.x86_64" );
+
+  std::optional<std::set<PoolItem>> items{ keepObs->getIfLocksInstalledOnly() };
+  BOOST_REQUIRE( items );
+  BOOST_CHECK_EQUAL( items->size(), 1U );
+  BOOST_CHECK_EQUAL( items->count( iglibc ), 1U );
+
+  // Applying the solution locks glibc in place (session lock, not
+  // saved permanently) so the re-solve reports no further problem.
+  ProblemSolutionList apply{ keepObs };
+  resolver.applySolutions( apply );
+  BOOST_CHECK( resolver.doUpgrade() );
+  BOOST_CHECK( iglibc.status().isLocked() );
+  BOOST_CHECK( iglibc.status().isByApplHigh() );
+  BOOST_CHECK( ! iglibc.status().transacts() );
+
+  ktest.reset();
+}
