@@ -102,6 +102,14 @@ namespace zypp
     std::optional<std::set<PoolItem>> getIfSkipsPatchesOnly() const;
 #endif
 
+    /** The solution contains only 'keep installed (lock in place)' actions. */
+    bool locksInstalledOnly() const;
+
+#ifdef __cpp_lib_optional // YAST/PK explicitly use c++11 until 15-SP3
+    /** The items if \ref locksInstalledOnly is true. */
+    std::optional<std::set<PoolItem>> getIfLocksInstalledOnly() const;
+#endif
+
   private:
     struct Impl;
     RWCOW_pointer<Impl> _pimpl;

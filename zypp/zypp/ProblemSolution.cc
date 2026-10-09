@@ -157,6 +157,20 @@ namespace zypp
     return _pimpl->collectActionItems();
   }
 
+  bool ProblemSolution::locksInstalledOnly() const
+  {
+    return _pimpl->allActionsMatch( []( const SolutionAction_Ptr & aptr ) -> bool {
+      return aptr->locksInstalledOnly();
+    } );
+  }
+
+  std::optional<std::set<PoolItem>> ProblemSolution::getIfLocksInstalledOnly() const
+  {
+    if ( not locksInstalledOnly() )
+      return std::nullopt;
+    return _pimpl->collectActionItems();
+  }
+
 
   std::ostream & operator<<( std::ostream & os, const ProblemSolution & obj )
   {
