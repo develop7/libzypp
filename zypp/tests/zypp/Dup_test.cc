@@ -76,6 +76,11 @@ BOOST_AUTO_TEST_CASE(keepObsoleteSolution) {
   //   - the solver reports the problem and offers 'keep obsolete glibc'
   //     (LOCK action) next to deinstalling bar (KEEP) and ignoring
   //     dependencies (inject).
+  //
+  // NOTE: this case clobbers the global pool set up by the TestInit
+  // fixture above (TestSetup::Impl's ctor erases all repos), so it
+  // must stay the last case in this suite; the ktest dtor does the
+  // cleanup.
   TestSetup ktest(Arch_x86_64);
   ktest.loadTestcaseRepos(TESTS_SRC_DIR "/data/TCKeepObsolete");
 
@@ -98,15 +103,23 @@ BOOST_AUTO_TEST_CASE(keepObsoleteSolution) {
     USR << prob << endl;
     for (const auto &sol : prob->solutions()) {
       if (sol->locksInstalledOnly()) {
-        keepObs = sol;
+        // keep the first match so a later unexpected second match
+        // refers to the deterministic instance in the diagnostics
+        if (!keepObs)
+          keepObs = sol;
         ++keepObsCount;
       } else {
+        // getIf* returning nullopt iff the predicate is false is a
+        // consistency pin against impl drift, not a behavioral test
         BOOST_CHECK(!sol->getIfLocksInstalledOnly());
       }
     }
   }
   BOOST_REQUIRE(keepObs);
-  BOOST_CHECK_EQUAL(keepObsCount, 1U);
+  // stop right here if the solver ever offers more than one
+  // keep-obsolete solution; the apply/re-solve below is only valid
+  // for the single expected one
+  BOOST_REQUIRE_EQUAL(keepObsCount, 1U);
 
   std::optional<std::set<PoolItem>> items{keepObs->getIfLocksInstalledOnly()};
   BOOST_REQUIRE(items);
@@ -121,6 +134,4 @@ BOOST_AUTO_TEST_CASE(keepObsoleteSolution) {
   BOOST_CHECK(iglibc.status().isLocked());
   BOOST_CHECK(iglibc.status().isByApplHigh());
   BOOST_CHECK(!iglibc.status().transacts());
-
-  ktest.reset();
 }
