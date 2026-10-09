@@ -1,4 +1,15 @@
 -------------------------------------------------------------------
+Thu Oct 9 14:00:00 UTC 2026 - develop7@develop7.info
+
+- ProblemSolution: Add locksInstalledOnly/getIfLocksInstalledOnly
+  mirroring skipsPatchesOnly/getIfSkipsPatchesOnly. The predicates
+  tell whether a solution merely keeps installed items in place
+  (session lock; e.g. 'keep obsolete <pkg>' as offered for problems
+  in a dist-upgrade). A caller may use this to auto-apply such
+  non-invasive solutions rather than asking the user.
+- version 17.39.0 (35)
+
+-------------------------------------------------------------------
 Mon Sep 21 17:23:26 CEST 2026 - ma@suse.de
 
 - BuildRequires:  %{libsolv_devel_package} >= 0.7.40 (bsc#1279541)

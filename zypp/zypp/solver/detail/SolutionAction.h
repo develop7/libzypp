@@ -63,6 +63,9 @@ namespace zypp
 
         /** The solution contains only 'do not install patch:' actions. */
         virtual bool skipsPatchesOnly() const;
+
+        /** The solution contains only 'lock installed item in place' actions. */
+        virtual bool locksInstalledOnly() const;
       };
 
       inline std::ostream & operator<<( std::ostream & str, const SolutionAction & action )
@@ -124,6 +127,7 @@ namespace zypp
         { return _item; }
 
         bool skipsPatchesOnly() const override;
+        bool locksInstalledOnly() const override;
 
       protected:
         const TransactionKind _action;

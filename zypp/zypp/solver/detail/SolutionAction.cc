@@ -55,6 +55,9 @@ namespace zypp::solver::detail {
   bool SolutionAction::skipsPatchesOnly() const
   { return false; }
 
+  bool SolutionAction::locksInstalledOnly() const
+  { return false; }
+
   std::ostream & operator<<( std::ostream & str, const SolutionActionList & actionlist )
   {
     for ( const auto & itemptr : actionlist )
@@ -137,6 +140,9 @@ namespace zypp::solver::detail {
 
   bool TransactionSolutionAction::skipsPatchesOnly() const
   { return _action == KEEP && _item.isKind<Patch>(); }
+
+  bool TransactionSolutionAction::locksInstalledOnly() const
+  { return _action == LOCK && _item.isSystem(); }
 
   ///////////////////////////////////////////////////////////////////////
   // class InjectSolutionAction
